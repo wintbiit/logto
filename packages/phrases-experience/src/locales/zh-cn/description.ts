@@ -49,7 +49,7 @@ const description = {
   link_email_or_phone_description: '绑定邮箱或手机号以保障你的账号安全',
   continue_with_more_information: '为保障你的账号安全，需要你补充以下信息。',
   create_your_account: '注册你的账号',
-  sign_in_to_your_account: '登录你的账号',
+  sign_in_to_your_account: '登录到华南虎统一认证',
   device_activation: '设备激活',
   device_activation_description: '输入你设备上显示的代码。确认代码匹配后，继续在此设备上登录。',
   device_activation_error_description: '输入你设备上显示的代码。',

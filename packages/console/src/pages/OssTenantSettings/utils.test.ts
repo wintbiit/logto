@@ -3,8 +3,8 @@ import type { TFuncKey } from 'i18next';
 import { getOssTenantMembersUpsellCopyKeys, shouldShowOssTenantMembersTab } from './utils';
 
 describe('shouldShowOssTenantMembersTab', () => {
-  it('returns true for OSS', () => {
-    expect(shouldShowOssTenantMembersTab({ isCloud: false })).toBe(true);
+  it('returns false for OSS', () => {
+    expect(shouldShowOssTenantMembersTab({ isCloud: false })).toBe(false);
   });
 
   it('returns false for cloud', () => {
