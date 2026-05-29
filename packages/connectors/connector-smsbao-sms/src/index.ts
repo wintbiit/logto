@@ -1,5 +1,5 @@
 import { assert } from '@silverhand/essentials';
-import got, { HTTPError } from 'got';
+import got, { HTTPError, RequestError } from 'got';
 
 import type {
   CreateConnector,
@@ -13,10 +13,9 @@ import {
   ConnectorType,
   getConfigTemplateByType,
   replaceSendMessageHandlebars,
-  validateConfig,
 } from '@logto/connector-kit';
 
-import { defaultMetadata, endpoint } from './constant.js';
+import { defaultMetadata, defaultTimeout, endpoint } from './constant.js';
 import type { SmsbaoSmsConfig } from './types.js';
 import { smsbaoSmsConfigGuard } from './types.js';
 
@@ -35,9 +34,13 @@ const errorMessages: Partial<Record<string, string>> = {
 const getErrorMessage = (code: string) => errorMessages[code] ?? `SMSBao SMS send failed: ${code}`;
 
 const getValidatedConfig = (rawConfig: unknown): SmsbaoSmsConfig => {
-  validateConfig(rawConfig, smsbaoSmsConfigGuard);
+  const result = smsbaoSmsConfigGuard.safeParse(rawConfig);
 
-  return rawConfig;
+  if (!result.success) {
+    throw new ConnectorError(ConnectorErrorCodes.InvalidConfig, result.error);
+  }
+
+  return result.data;
 };
 
 const sendMessage =
@@ -61,6 +64,12 @@ const sendMessage =
 
     try {
       const { body } = await got.get(endpoint, {
+        retry: {
+          limit: 0,
+        },
+        timeout: {
+          request: defaultTimeout,
+        },
         searchParams: {
           u: username,
           p: passwordOrApiKey,
@@ -82,6 +91,10 @@ const sendMessage =
 
       if (error instanceof HTTPError) {
         throw new ConnectorError(ConnectorErrorCodes.General, String(error.response.body));
+      }
+
+      if (error instanceof RequestError) {
+        throw new ConnectorError(ConnectorErrorCodes.General, 'SMSBao request failed');
       }
 
       throw new ConnectorError(

@@ -15,6 +15,8 @@ import CustomUiAssetsUploader from '@/pages/SignInExperience/components/CustomUi
 import type { SignInExperienceForm } from '../../../types';
 import FormSectionTitle from '../../components/FormSectionTitle';
 
+import CustomUiCspForm from './CustomUiCspForm';
+
 function CustomUiForm() {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
   const { getDocumentationUrl } = useDocumentationUrl();
@@ -23,46 +25,51 @@ function CustomUiForm() {
   const isBringYourUiEnabled = currentSubscriptionQuota.bringYourUiEnabled;
 
   return (
-    <Card>
-      <FormSectionTitle title="custom_ui.title" />
-      <CustomCssEditorField />
+    <>
+      <Card>
+        <FormSectionTitle title="custom_ui.css_code_editor_title" />
+        <CustomCssEditorField />
+      </Card>
       {isCloud && (
-        <FormField
-          title="sign_in_exp.custom_ui.bring_your_ui_title"
-          description={
-            <Trans
-              components={{
-                a: (
-                  <TextLink
-                    targetBlank="noopener"
-                    href={getDocumentationUrl('/docs/recipes/customize-sie/bring-your-ui')}
-                  />
-                ),
-              }}
-            >
-              {t('sign_in_exp.custom_ui.bring_your_ui_description')}
-            </Trans>
-          }
-          descriptionPosition="top"
-          featureTag={{
-            isVisible: !isBringYourUiEnabled,
-            plan: latestProPlanId,
-          }}
-        >
-          <Controller
-            name="customUiAssets"
-            control={control}
-            render={({ field: { onChange, value } }) => (
-              <CustomUiAssetsUploader
-                disabled={!isBringYourUiEnabled}
-                value={value}
-                onChange={onChange}
-              />
-            )}
+        <Card>
+          <FormSectionTitle
+            title="custom_ui.bring_your_ui_title"
+            featureTag={{ isVisible: !isBringYourUiEnabled, plan: latestProPlanId }}
           />
-        </FormField>
+          <FormField
+            title="sign_in_exp.custom_ui.bring_your_ui_upload_title"
+            description={
+              <Trans
+                components={{
+                  a: (
+                    <TextLink
+                      targetBlank="noopener"
+                      href={getDocumentationUrl('/docs/recipes/customize-sie/bring-your-ui')}
+                    />
+                  ),
+                }}
+              >
+                {t('sign_in_exp.custom_ui.bring_your_ui_description')}
+              </Trans>
+            }
+            descriptionPosition="top"
+          >
+            <Controller
+              name="customUiAssets"
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <CustomUiAssetsUploader
+                  disabled={!isBringYourUiEnabled}
+                  value={value}
+                  onChange={onChange}
+                />
+              )}
+            />
+          </FormField>
+          <CustomUiCspForm isDisabled={!isBringYourUiEnabled} />
+        </Card>
       )}
-    </Card>
+    </>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   userMfaDataKey,
   userMfaSettingsResponseGuard,
   jsonObjectGuard,
+  type User,
 } from '@logto/schemas';
 import { conditional } from '@silverhand/essentials';
 import { z } from 'zod';
@@ -29,7 +30,15 @@ import mfaVerificationsRoutes from './mfa-verifications.js';
 import koaAccountCenter from './middlewares/koa-account-center.js';
 import accountSessionRoutes from './sessions.js';
 import thirdPartyTokensRoutes from './third-party-tokens.js';
+import accountUserAssetsRoutes from './user-assets.js';
 import { getAccountCenterFilteredProfile, getScopedProfile } from './utils/get-scoped-profile.js';
+
+const hasSecurityVerificationMethod = ({
+  passwordEncrypted,
+  primaryEmail,
+  primaryPhone,
+}: Pick<User, 'passwordEncrypted' | 'primaryEmail' | 'primaryPhone'>) =>
+  Boolean(passwordEncrypted) || Boolean(primaryEmail) || Boolean(primaryPhone);
 
 export default function accountRoutes<T extends UserRouter>(...args: RouterInitArgs<T>) {
   const [router, { queries, libraries }] = args;
@@ -178,18 +187,22 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
     }),
     async (ctx, next) => {
       const { id: userId, identityVerified } = ctx.auth;
-      assertThat(
-        identityVerified,
-        new RequestError({ code: 'verification_record.permission_denied', status: 401 })
-      );
       const { password } = ctx.guard.body;
+
+      const user = await findUserById(userId);
+      if (hasSecurityVerificationMethod(user)) {
+        assertThat(
+          identityVerified,
+          new RequestError({ code: 'verification_record.permission_denied', status: 401 })
+        );
+      }
+
       const { fields } = ctx.accountCenter;
       assertThat(
         fields.password === AccountCenterControlValue.Edit,
         'account_center.field_not_editable'
       );
 
-      const user = await findUserById(userId);
       const signInExperience = await findDefaultSignInExperience();
       const passwordPolicyChecker = new PasswordValidator(signInExperience.passwordPolicy, user);
       await passwordPolicyChecker.validatePassword(password, user);
@@ -293,4 +306,5 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
   mfaVerificationsRoutes(...args);
   accountSessionRoutes(...args);
   accountGrantRoutes(...args);
+  accountUserAssetsRoutes(...args);
 }

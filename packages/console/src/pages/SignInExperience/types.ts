@@ -1,10 +1,13 @@
 import {
   AccountCenterControlValue,
   type AccountCenter as AccountCenterConfig,
+  type AccountCenterProfileFields,
+  type CustomUiCsp,
   type SignUp,
   type SignInExperience,
   type SignInIdentifier,
   type SignUpIdentifier as SignUpIdentifierMethod,
+  type SignUpProfileFields,
   type AccountCenterFieldControl,
 } from '@logto/schemas';
 /**
@@ -51,6 +54,11 @@ export type AccountCenterFormValues = {
   webauthnRelatedOrigins: string[];
   deleteAccountUrl: string;
   customCss?: string;
+  /**
+   * `useFieldArray` requires an array, so null from the API is normalized to an empty array when
+   * the form is initialized (see `convertAccountCenterToForm`).
+   */
+  profileFields: AccountCenterProfileFields;
 };
 
 const createDefaultAccountCenterFormValues = (): AccountCenterFormValues => ({
@@ -61,6 +69,7 @@ const createDefaultAccountCenterFormValues = (): AccountCenterFormValues => ({
   ) as Record<AccountCenterFieldKey, AccountCenterControlValue>,
   webauthnRelatedOrigins: [],
   deleteAccountUrl: '',
+  profileFields: [],
 });
 
 export const normalizeWebauthnRelatedOrigins = (origins?: string[]): string[] =>
@@ -79,6 +88,7 @@ export const convertAccountCenterToForm = (
   webauthnRelatedOrigins: normalizeWebauthnRelatedOrigins(accountCenter?.webauthnRelatedOrigins),
   deleteAccountUrl: normalizeDeleteAccountUrl(accountCenter?.deleteAccountUrl ?? undefined),
   customCss: accountCenter?.customCss ?? undefined,
+  profileFields: accountCenter?.profileFields ?? [],
 });
 
 /**
@@ -107,12 +117,25 @@ export type SignUpForm = Omit<SignUp, 'identifiers' | 'secondaryIdentifiers'> & 
   }>;
 };
 
+export type CustomUiCspForm = Required<Record<keyof CustomUiCsp, string[]>>;
+
 export type SignInExperienceForm = Omit<
   SignInExperience,
-  'signUp' | 'customCss' | OmittedSignInExperienceKeys
+  'signUp' | 'customCss' | 'customUiCsp' | 'signUpProfileFields' | OmittedSignInExperienceKeys
 > & {
   customCss?: string; // Code editor components can not properly handle null value, manually transform null to undefined instead.
+  customUiCsp: CustomUiCspForm;
   signUp: SignUpForm;
+  /**
+   * `useFieldArray` requires an array, so the form always stores this as an array.
+   */
+  signUpProfileFields: SignUpProfileFields;
+  /**
+   * Legacy tenants may still store `null`, which means "use the default catalog behavior".
+   * Keep tracking whether the original value was already explicitly configured so saving unrelated
+   * settings does not silently change `null` into `[]`.
+   */
+  hasConfiguredSignUpProfileFields: boolean;
   createAccountEnabled: boolean;
 };
 
@@ -134,7 +157,8 @@ export type SignInMethodsObject = Record<
  */
 export type SignInExperiencePageManagedData = Omit<
   SignInExperience,
-  OmittedSignInExperienceKeys | 'hideLogtoBranding'
+  OmittedSignInExperienceKeys | 'customUiCsp' | 'hideLogtoBranding'
 > & {
+  customUiCsp?: CustomUiCsp;
   hideLogtoBranding?: boolean;
 };
