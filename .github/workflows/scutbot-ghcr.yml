@@ -20,6 +20,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve upstream version
+        id: version
+        run: echo "tag=$(git describe --tags --match 'v*' --abbrev=0)" >> "$GITHUB_OUTPUT"
 
       - name: Docker meta
         id: meta
@@ -28,7 +34,9 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/logto
           tags: |
             type=raw,value=scutbot
+            type=raw,value=${{ steps.version.outputs.tag }}-scutbot
             type=sha,prefix=scutbot-,format=long
+            type=sha,prefix=${{ steps.version.outputs.tag }}-scutbot-,format=long
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
