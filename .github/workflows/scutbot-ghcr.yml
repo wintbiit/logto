@@ -20,12 +20,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Resolve upstream version
         id: version
-        run: echo "tag=$(git describe --tags --match 'v*' --abbrev=0)" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(node -p "'v' + require('./packages/core/package.json').version")
+          echo "tag=$version" >> "$GITHUB_OUTPUT"
 
       - name: Docker meta
         id: meta
